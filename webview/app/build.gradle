@@ -20,4 +20,5 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation files('../../wailsdroid-test/foo.aar')
 }
