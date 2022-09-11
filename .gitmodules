@@ -1,0 +1,3 @@
+[submodule "wails"]
+	path = wails
+	url = git@github.com:AlbinoDrought/wails.git
