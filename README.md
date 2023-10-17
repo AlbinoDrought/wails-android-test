@@ -2,7 +2,7 @@
 
 1. Clone this repository: `git clone https://github.com/AlbinoDrought/wails-android-test.git`
 2. Enter the directory: `cd wails-android-test`
-3. Initialize submodules: `git submodule init`
+3. Initialize submodules: `git submodule update --init --recursive`
 4. Install the hacky proof-of-concept version of Wails: `pushd wails/v2/cmd/wails && go install && popd`
 5. Install [gomobile](https://pkg.go.dev/golang.org/x/mobile): `go install golang.org/x/mobile/cmd/gomobile@latest`
 6. Install Android SDK 19, Android NDK Tools (I had better luck installing these with Android Studio)
