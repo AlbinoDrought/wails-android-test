@@ -1,0 +1,116 @@
+name: Build
+
+on:
+  push:
+    branches: [master, "chore/gha"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-aar:
+    name: Build Wails AAR
+    runs-on: ubuntu-latest
+    env:
+      ANDROID_NDK_VERSION: 25.2.9519653
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Set up JDK 17 (for sdkmanager)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK + NDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: "platform-tools platforms;android-19 platforms;android-31 build-tools;31.0.0 ndk;${{ env.ANDROID_NDK_VERSION }}"
+
+      - name: Set up JDK 11 (for Gradle / build)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '11'
+
+      - name: Install hacked Wails CLI
+        working-directory: wails/v2/cmd/wails
+        run: go install .
+
+      - name: Install gomobile
+        run: |
+          go install golang.org/x/mobile/cmd/gomobile@latest
+          go install golang.org/x/mobile/cmd/gobind@latest
+
+      - name: Build frontend
+        working-directory: wailsdroid-test/frontend
+        run: |
+          npm install
+          npm run build
+
+      - name: Build foo.aar
+        working-directory: wailsdroid-test
+        env:
+          ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/${{ env.ANDROID_NDK_VERSION }}
+        run: make
+
+      - name: Upload foo.aar
+        uses: actions/upload-artifact@v4
+        with:
+          name: foo-aar
+          path: wailsdroid-test/foo.aar
+          if-no-files-found: error
+
+  build-apk:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    needs: build-aar
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17 (for sdkmanager)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: "platform-tools platforms;android-31 build-tools;31.0.0"
+
+      - name: Set up JDK 11 (for Gradle / build)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '11'
+
+      - name: Download foo.aar
+        uses: actions/download-artifact@v4
+        with:
+          name: foo-aar
+          path: wailsdroid-test
+
+      - name: Build APK
+        working-directory: webview
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: webview/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
