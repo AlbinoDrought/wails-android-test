@@ -12,7 +12,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ANDROID_NDK_VERSION: 25.2.9519653
-      SKIP_JDK_VERSION_CHECK: "true"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,21 +23,27 @@ jobs:
         with:
           go-version: '1.21'
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '11'
-
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
 
+      - name: Set up JDK 17 (for sdkmanager)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
       - name: Set up Android SDK + NDK
         uses: android-actions/setup-android@v3
         with:
           packages: "platform-tools platforms;android-19 platforms;android-31 build-tools;31.0.0 ndk;${{ env.ANDROID_NDK_VERSION }}"
+
+      - name: Set up JDK 11 (for Gradle / build)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '11'
 
       - name: Install hacked Wails CLI
         working-directory: wails/v2/cmd/wails
@@ -72,22 +77,26 @@ jobs:
     name: Build Android APK
     runs-on: ubuntu-latest
     needs: build-aar
-    env:
-      SKIP_JDK_VERSION_CHECK: "true"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Java
+      - name: Set up JDK 17 (for sdkmanager)
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '11'
+          java-version: '17'
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
         with:
           packages: "platform-tools platforms;android-31 build-tools;31.0.0"
+
+      - name: Set up JDK 11 (for Gradle / build)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '11'
 
       - name: Download foo.aar
         uses: actions/download-artifact@v4
